@@ -1,3 +1,4 @@
 env
 chromedriver.exe
-test.txt
+geckodriver*
+url.txt
