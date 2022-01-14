@@ -2,15 +2,15 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options
-from selenium.common.exceptions import StaleElementReferenceException
+from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException
 from time import sleep
 import selenium_parser
 
 
 urls = []
-
+site_list = []
 options = Options()
-options.headless = True
+#options.headless = True
 
 
 def get_input():
@@ -51,8 +51,13 @@ class google_maps:
         max_list = self.driver.find_element(By.CLASS_NAME, ('Jl2AFb'))
         next_btn = self.driver.find_element(By.ID,("ppdPk-Ej1Yeb-LgbsSe-tJiF1e"))
         disable_btn = next_btn.get_attribute('disabled')                    
+        cards_search = self.driver.find_elements(By.CLASS_NAME,("a4gq8e-aVTXAb-haAclf-jRmmHf-hSRGPd"))
         try:
-            cards_search = self.driver.find_elements(By.CLASS_NAME,("a4gq8e-aVTXAb-haAclf-jRmmHf-hSRGPd"))
+            checkbox = self.driver.find_element(By.CLASS_NAME,('jmUlyc-LaJeF-on-HG3vT-checkbox-selected'))
+        except NoSuchElementException:
+            checkbox = self.driver.find_element(By.CLASS_NAME,('jmUlyc-LaJeF-on-HG3vT-checkbox'))
+            checkbox.click()
+        try:
             cards_search[-1].send_keys(Keys.PAGE_DOWN)
         except IndexError:
             self.driver.close()
