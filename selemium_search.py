@@ -2,7 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options
-from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException
+from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException, ElementClickInterceptedException
 from time import sleep
 import selenium_parser
 
@@ -13,51 +13,46 @@ options = Options()
 #options.headless = True
 
 
-def get_input():
-    get_country = str(input('country: '))
-    get_region = str(input('region: '))
-    get_town = str(input('town: '))
-    get_search = str(input('search: '))
-    get_request = f'{get_country}, {get_region}, {get_town}, {get_search}' 
-    return get_request
-
-
 def url_txt(text):
     with open("url.txt", "a") as t:
         t.writelines(f'{text}\n')
     t.close()
 
 class google_maps:
-    def __init__(self, url):
-        self.driver = webdriver.Firefox(options=options)
+    def __init__(self, url, get_country, get_town, get_search):
         self.url = url
         self.parser = selenium_parser.get_info()
+        self.get_country = get_country
+        self.get_town = get_town
+        self.get_search = get_search
 
 
-    def search(self):
+    def output_search(self):
+        self.driver = webdriver.Firefox(options=options)
         self.driver.get(self.url)
-        self.get_search()
-        sleep(10)
-        self.result_search()
-    
-
-    def get_search(self):
         search = self.driver.find_element(By.ID, ('searchboxinput'))
-        search.send_keys(get_input())
+        search.send_keys(f'{self.get_country}, {self.get_town}, {self.get_search}')
         search.send_keys(Keys.ENTER)
                 
 
     def result_search(self):
-        max_list = self.driver.find_element(By.CLASS_NAME, ('Jl2AFb'))
-        next_btn = self.driver.find_element(By.ID,("ppdPk-Ej1Yeb-LgbsSe-tJiF1e"))
-        disable_btn = next_btn.get_attribute('disabled')                    
-        cards_search = self.driver.find_elements(By.CLASS_NAME,("a4gq8e-aVTXAb-haAclf-jRmmHf-hSRGPd"))
         try:
-            checkbox = self.driver.find_element(By.CLASS_NAME,('jmUlyc-LaJeF-on-HG3vT-checkbox-selected'))
+            try:
+                name = self.driver.find_element(By.CLASS_NAME,('x3AX1-LfntMc-header-title'))
+                url_txt(self.driver.current_url)
+                self.driver.close()
+                self.parser.get_start()
+            except NoSuchElementException:
+                pass
+            cards_search = self.driver.find_elements(By.CLASS_NAME,("a4gq8e-aVTXAb-haAclf-jRmmHf-hSRGPd"))
+            max_list = self.driver.find_element(By.CLASS_NAME, ('Jl2AFb'))
+            next_btn = self.driver.find_element(By.ID,("ppdPk-Ej1Yeb-LgbsSe-tJiF1e"))
+            disable_btn = next_btn.get_attribute('disabled')                    
         except NoSuchElementException:
-            checkbox = self.driver.find_element(By.CLASS_NAME,('jmUlyc-LaJeF-on-HG3vT-checkbox'))
-            checkbox.click()
-        try:
+            self.driver.implicitly_wait(5)
+            self.result_search()
+        
+        try:    
             cards_search[-1].send_keys(Keys.PAGE_DOWN)
         except IndexError:
             self.driver.close()
@@ -70,19 +65,25 @@ class google_maps:
             pass
         cards_search.clear()
         f_urls = set(urls)
-        if len(f_urls) >= 20 or len(f_urls) >= int(max_list.text[-2:]):
+        try:
+            s = (int(max_list.text[-3:])+1) - int(max_list.text[-9:-6])
+        except ValueError:
+            try:
+                s = (int(max_list.text[-3:])+1) - int(max_list.text[-8:-5])
+            except ValueError:
+                s = (int(max_list.text[-3:])+1) - int(max_list.text[-7:-5])
+        if len(f_urls) >= s:
             save_url = [url_txt(url_card) for url_card in f_urls]
-            if disable_btn == "true": 
+            while disable_btn == "true": 
                 self.driver.close()
-                self.parser.get_start()
+                self.parser.get_start()    
+                break
             else:
                 urls.clear()
-                next_btn.click()
-                sleep(10)
+                try:
+                    next_btn.click()
+                except ElementClickInterceptedException:
+                    pass
                 self.result_search()
         else:
-            sleep(5)
-            try:
-                self.result_search()
-            except RecursionError:
-                pass
+            self.result_search()
