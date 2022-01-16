@@ -32,7 +32,6 @@ def main():
                     if f_city[1] == id_country:
                         print('#'*20)
                         print(f_city[3])
-                        print('#'*20)
                         town = f_city[3]
                         selenium_search = google_maps("https://www.google.com/maps?hl=en", country, town, search)
                         url_txt()

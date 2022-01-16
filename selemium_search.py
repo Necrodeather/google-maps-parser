@@ -71,7 +71,13 @@ class google_maps:
             try:
                 s = (int(max_list.text[-3:])+1) - int(max_list.text[-8:-5])
             except ValueError:
-                s = (int(max_list.text[-3:])+1) - int(max_list.text[-7:-5])
+                try:
+                    s = (int(max_list.text[-3:])+1) - int(max_list.text[-7:-5])
+                except ValueError:
+                    try:
+                        s = (int(max_list.text[-2:])+1) - int(max_list.text[-5:-4])
+                    except ValueError:
+                        pass
         if len(f_urls) >= s:
             save_url = [url_txt(url_card) for url_card in f_urls]
             while disable_btn == "true": 
