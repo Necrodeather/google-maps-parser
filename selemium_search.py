@@ -3,14 +3,24 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options
 from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException, ElementClickInterceptedException
+from fake_useragent import UserAgent
 from time import sleep
 import selenium_parser
+import random
 
+i = None
 
 urls = []
 site_list = []
 options = Options()
-#options.headless = True
+options.headless = True
+useragent = UserAgent()
+options.set_preference("general.useragent.override", useragent.random)
+
+with open("proxy.txt") as proxy_text:
+    proxy_list = proxy_text.read().splitlines()
+    
+
 
 
 def url_txt(text):
@@ -28,6 +38,13 @@ class google_maps:
 
 
     def output_search(self):
+        i = random.randint(0, int(len(proxy_list))-1)
+        firefox_capabilities = webdriver.DesiredCapabilities.FIREFOX
+        firefox_capabilities["proxy"] = {
+            "httpProxy": proxy_list[i],
+            "sslProxy": proxy_list[i],
+            "proxyType": "MANUAL",
+        }
         self.driver = webdriver.Firefox(options=options)
         self.driver.get(self.url)
         search = self.driver.find_element(By.ID, ('searchboxinput'))

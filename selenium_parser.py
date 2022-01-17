@@ -3,13 +3,21 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
+from fake_useragent import UserAgent
 import multiprocessing
 from time import sleep
+import random
 
+i = None
 
 options = Options()
 options.headless = True
+useragent = UserAgent()
+options.set_preference("general.useragent.override", useragent.random)
 
+
+with open("proxy.txt") as proxy:
+    proxy_list = proxy.read().splitlines()
 
 
 class get_info():
@@ -29,7 +37,13 @@ class get_info():
 
 
     def multi_search(self, url):
-
+        i = random.randint(0, int(len(proxy_list))-1)
+        firefox_capabilities = webdriver.DesiredCapabilities.FIREFOX
+        firefox_capabilities["proxy"] = {
+            "httpProxy": proxy_list[i],
+            "sslProxy": proxy_list[i],
+            "proxyType": "MANUAL",
+        }
         self.driver = webdriver.Firefox(options=options)
         self.driver.get(url)
         try:
