@@ -1,4 +1,3 @@
-from tkinter import ANCHOR
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
@@ -13,7 +12,7 @@ import random
 i = None
 
 options = Options()
-#options.headless = True
+options.headless = True
 useragent = UserAgent()
 options.set_preference("general.useragent.override", useragent.random)
 
@@ -24,15 +23,17 @@ with open("proxy.txt") as proxy:
 
 class get_info():
     def get_start(self):
+        self.database = database()
         with open("url.txt") as urls:
             self.urls = urls.read().splitlines()
-        #f_urls = self.urls[:28]  # test
         f_urls = set(self.urls)
+        print('#'*20)
         for url in f_urls:
-            print('#'*20)
-        #multiprocessing.Pool(multiprocessing.cpu_count()).map(self.multi_search, f_urls)
-        #multiprocessing.Pool(multiprocessing.cpu_count()).close()
             self.multi_search(url)
+        # multiprocessing.Pool(multiprocessing.cpu_count()).map(self.multi_search, f_urls)
+        # multiprocessing.Pool(multiprocessing.cpu_count()).close()
+        # multiprocessing.Pool(multiprocessing.cpu_count()).join()
+        #multiprocessing.cpu_count()
 
 
     def multi_search(self, url):
@@ -124,19 +125,22 @@ class get_info():
                 f_menu = menu.text
             elif value == 'Find a table':
                 find_a_table = True
-
-        print(f'Name: {f_name}\nCategory: {f_category}\nReviews: {f_reviews}\nRating: {f_rating}\nServices: {f_services}\nAddress: {address}\nWork time: {f_time}\nFind a table: {find_a_table}\nMenu: {f_menu}\nWebsite: {website}\nPhone: {phone}\nPlus code: {plus_code}')
-        print('#'*20)
-        self.get_reviews()
+        self.database.insert_fisrt_info(f_name,f_category,f_reviews,f_rating,f_services,address,f_time,find_a_table,f_menu,website,phone,plus_code)
+        try:
+            self.get_reviews()
+        except NoSuchElementException:
+            print(f"[INFO] Отзывы на {f_name} не обнаружены!")
+            print('#'*20)
         self.driver.back()
         try:
             self.get_photo(f_name)
         except NoSuchElementException:
             print(f"[INFO] Фотографии на {f_name} не обнаружены!")
+            print('#'*20)
         self.driver.close()
 
     def get_reviews(self):
-
+        self.reviews = {}
         btn_more_reviews = self.driver.find_elements(By.CLASS_NAME, ('M77dve'))
         for click_more_reviews in btn_more_reviews:
             if click_more_reviews.text[:12] == 'More reviews':
@@ -160,12 +164,16 @@ class get_info():
             except NoSuchElementException:
                 pass
             try:
-                full_text = self.driver.find_element(By.CLASS_NAME, ('ODSEW-ShBeI-text'))
+                full_text = review.find_element(By.CLASS_NAME, ('ODSEW-ShBeI-text'))
             except NoSuchElementException:
                 full_text = 'Null'
-            print(f'{author_name.text}, {avatar_author}, {rating_from_author}, {full_text.text}')
-            continue
-        #self.circle_reviews()
+            self.reviews['avatar_author'] = avatar_author
+            self.reviews['author_name'] = author_name.text
+            self.reviews['rating_from_author'] = rating_from_author
+            self.reviews['full_text'] = full_text.text.replace('\n', '')
+            print(f'{self.reviews}\n')
+        sleep(3)
+
 
 
     def get_photo(self, name):

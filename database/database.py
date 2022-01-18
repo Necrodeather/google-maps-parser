@@ -1,3 +1,4 @@
+
 import pymysql
 import json
 
@@ -15,7 +16,6 @@ def create_main(cursor):
         Rating varchar(3),
         Services text,
         Address text,
-        Location text,
         Work_time text,
         Find_a_table boolean,
         Menu text,
@@ -61,13 +61,9 @@ def create_reviews(cursor):
 
 
 
-""" name, category, reviews, rating, services, 
-    address,work_time, find_a_table, menu, website, phone, plus_code, 
+""" , 
     photo, avatar_author, author_name, rating_from_author, full_texts):"""
 class database():
-    def __init__(self):
-        pass
-    
     def create_database(self):
             print('[INFO] Создаем базу данных')
             connection = pymysql.connect(
@@ -77,9 +73,9 @@ class database():
                 password = config["password"],
                 cursorclass=pymysql.cursors.DictCursor
             )
-            cursor = connection.cursor()
+            self.cursor = connection.cursor()
             connection = create_db = f'CREATE DATABASE {config["database"]};'
-            cursor.execute(create_db)
+            self.cursor.execute(create_db)
             self.create_connection()
 
     def create_connection(self):
@@ -101,5 +97,24 @@ class database():
             print('[WARNING]База данных не найдена!')
             self.create_database()
 
-data = database()
-data.create_connection()
+    def insert_fisrt_info(self, name, category, reviews, rating, services, 
+    address,work_time, find_a_table, menu, website, phone, plus_code):
+        self.name = name
+        self.category = category
+        self.reviews = reviews
+        self.rating = rating
+        self.services = services
+        self.address = address
+        self.work_time = work_time
+        self.find_a_table = find_a_table
+        self.menu = menu
+        self.website = website
+        self.phone = phone
+        self.plus_code = plus_code
+        
+        sql = self.cursor.execute(f"SELECT S_Name, Category, Rating, Services, Address FROM {config['database']} WHERE S_Name = {self.name},Category = {self.category},Rating = {self.reviews},Services = {self.rating},Address = {self.services}")
+        if sql.fetchone() is None:
+            insert_sql = 'INSERT INTO actress_table VALUES (?,?,?,?,?,?,?,?,?,?,?)', self.name, self.category,self.reviews,self.rating,self.services,self.address,self.work_time,self.find_a_table,self.menu,self.website,self.phone,self.plus_code
+            print(f'Добавлена информация о {self.name}')
+            self.cursor.execute(insert_sql)
+        return()

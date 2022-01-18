@@ -46,7 +46,10 @@ class google_maps:
         }
         self.driver = webdriver.Firefox(options=options)
         self.driver.get(self.url)
-        search = self.driver.find_element(By.ID, ('searchboxinput'))
+        try:
+            search = self.driver.find_element(By.ID, ('searchboxinput'))
+        except NoSuchElementException:
+            self.output_search()
         search.send_keys(f'{self.get_country}, {self.get_town}, {self.get_search}')
         search.send_keys(Keys.ENTER)
                 
