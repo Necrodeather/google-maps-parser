@@ -1,3 +1,4 @@
+from tkinter import ANCHOR
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
@@ -5,13 +6,14 @@ from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 from fake_useragent import UserAgent
 import multiprocessing
+from database.database import database
 from time import sleep
 import random
 
 i = None
 
 options = Options()
-options.headless = True
+#options.headless = True
 useragent = UserAgent()
 options.set_preference("general.useragent.override", useragent.random)
 
@@ -26,9 +28,11 @@ class get_info():
             self.urls = urls.read().splitlines()
         #f_urls = self.urls[:28]  # test
         f_urls = set(self.urls)
-        print('#'*20)
-        multiprocessing.Pool(multiprocessing.cpu_count()).map(self.multi_search, f_urls)
-        multiprocessing.Pool(multiprocessing.cpu_count()).close()
+        for url in f_urls:
+            print('#'*20)
+        #multiprocessing.Pool(multiprocessing.cpu_count()).map(self.multi_search, f_urls)
+        #multiprocessing.Pool(multiprocessing.cpu_count()).close()
+            self.multi_search(url)
 
 
     def multi_search(self, url):
@@ -123,7 +127,8 @@ class get_info():
 
         print(f'Name: {f_name}\nCategory: {f_category}\nReviews: {f_reviews}\nRating: {f_rating}\nServices: {f_services}\nAddress: {address}\nWork time: {f_time}\nFind a table: {find_a_table}\nMenu: {f_menu}\nWebsite: {website}\nPhone: {phone}\nPlus code: {plus_code}')
         print('#'*20)
-        # self.get_reviews()
+        self.get_reviews()
+        self.driver.back()
         try:
             self.get_photo(f_name)
         except NoSuchElementException:
@@ -131,45 +136,41 @@ class get_info():
         self.driver.close()
 
     def get_reviews(self):
-        self.full_reviews = {}
+
         btn_more_reviews = self.driver.find_elements(By.CLASS_NAME, ('M77dve'))
         for click_more_reviews in btn_more_reviews:
             if click_more_reviews.text[:12] == 'More reviews':
                 click_more_reviews.click()
                 break
         sleep(10)
-        self.author_names = self.driver.find_elements(
-            By.CLASS_NAME, ('ODSEW-ShBeI-title'))
-        avatar_authors = self.driver.find_elements(
-            By.CLASS_NAME, ('ODSEW-ShBeI-t1uDwd-HiaYvf'))
-        self.avatar_authors_attr = [
-            x.get_attribute('src') for x in avatar_authors]
-        rating_from_authors = self.driver.find_elements(
-            By.CLASS_NAME, ('ODSEW-ShBeI-H1e3jb'))
-        self.rating_from_authors_attr = [x.get_attribute(
-            'aria-label') for x in rating_from_authors]
-        self.full_texts = self.driver.find_elements(
-            By.CLASS_NAME, ('ODSEW-ShBeI-text'))
-        self.circle_reviews()
+        try:
+            self.circle_reviews()
+        except NoSuchElementException:
+            return False
 
     def circle_reviews(self):
-        for author_name in self.author_names:
-            self.full_reviews['name'] = author_name.text
-            for avatar_author in self.avatar_authors_attr:
-                self.full_reviews['avatar'] = avatar_author
-                for rating_from_author in self.rating_from_authors_attr:
-                    self.full_reviews['rating'] = rating_from_author
-                    for full_text in self.full_texts:
-                        self.full_reviews['text'] = full_text.text
+        reviews_cards = self.driver.find_elements(By.CLASS_NAME, ('ODSEW-ShBeI'))
+        for review in reviews_cards:  
+            author_name = review.find_element(By.CLASS_NAME, ('ODSEW-ShBeI-title'))
+            avatar_author = review.find_element(By.CLASS_NAME, ('ODSEW-ShBeI-t1uDwd-HiaYvf')).get_attribute('src')
+            rating_from_author = review.find_element(By.CLASS_NAME, ('ODSEW-ShBeI-H1e3jb')).get_attribute('aria-label')
+            try:
+                btn_all_img = review.find_element(By.CLASS_NAME, ('gXqMYb-hSRGPd'))
+                btn_all_img.click()
+            except NoSuchElementException:
+                pass
+            try:
+                full_text = self.driver.find_element(By.CLASS_NAME, ('ODSEW-ShBeI-text'))
+            except NoSuchElementException:
+                full_text = 'Null'
+            print(f'{author_name.text}, {avatar_author}, {rating_from_author}, {full_text.text}')
+            continue
+        #self.circle_reviews()
 
-                        print(self.full_reviews)
-                        self.circle_reviews()
 
     def get_photo(self, name):
         f_img = []
-        btn_all_img = self.driver.find_element(
-            By.CLASS_NAME, ('a4izxd-tUdTXb-xJzy8c-haAclf'))
-        btn_all_img.click()
+        
         sleep(10)
         clicked_img = self.driver.find_elements(
             By.CLASS_NAME, ('mWq4Rd-eEDwDf'))

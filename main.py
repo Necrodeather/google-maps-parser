@@ -1,6 +1,5 @@
-from base64 import encode
 import csv
-from selemium_search import google_maps
+from scripts.selemium_search import google_maps
 from selenium.common.exceptions import InvalidSessionIdException
 
 
