@@ -27,13 +27,8 @@ class get_info():
         #f_urls = self.urls[:28]  # test
         f_urls = set(self.urls)
         print('#'*20)
-        try:
-            multiprocessing.Pool(multiprocessing.cpu_count()).map(self.multi_search, f_urls)
-            multiprocessing.Pool(multiprocessing.cpu_count()).close()
-            multiprocessing.Pool(multiprocessing.cpu_count()).join()
-        except NameError:
-            return True
-        
+        multiprocessing.Pool(multiprocessing.cpu_count()).map(self.multi_search, f_urls)
+        multiprocessing.Pool(multiprocessing.cpu_count()).close()
 
 
     def multi_search(self, url):
@@ -134,7 +129,6 @@ class get_info():
         except NoSuchElementException:
             print(f"[INFO] Фотографии на {f_name} не обнаружены!")
         self.driver.close()
-        p.close()
 
     def get_reviews(self):
         self.full_reviews = {}

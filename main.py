@@ -1,14 +1,15 @@
+from base64 import encode
 import csv
 from selemium_search import google_maps
 from selenium.common.exceptions import InvalidSessionIdException
 
 
-with open('full_list_countrys/city.csv') as full_city:
+with open('full_list_countrys/city.csv', encoding = 'utf-8') as full_city:
     city = csv.reader(full_city, delimiter = ";")
     list_city = [x for x in city]
 
 
-with open('full_list_countrys/country.csv') as full_country:
+with open('full_list_countrys/country.csv', encoding = 'utf-8') as full_country:
     country = csv.reader(full_country, delimiter = ";")
     list_country = [x for x in country]
 
