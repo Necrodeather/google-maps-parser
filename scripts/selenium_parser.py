@@ -1,11 +1,10 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException
 from fake_useragent import UserAgent
 import multiprocessing
-from database.database import database
+from database.database import insert_fisrt_info, insert_second_reviews, insert_three_photo
 from time import sleep
 import random
 
@@ -23,17 +22,19 @@ with open("proxy.txt") as proxy:
 
 class get_info():
     def get_start(self):
-        self.database = database()
+        self.info_database = insert_fisrt_info
+        self.reviews_database = insert_second_reviews
+        self.photo_database = insert_three_photo
         with open("url.txt") as urls:
             self.urls = urls.read().splitlines()
         f_urls = set(self.urls)
         print('#'*20)
         for url in f_urls:
-            self.multi_search(url)
-        # multiprocessing.Pool(multiprocessing.cpu_count()).map(self.multi_search, f_urls)
-        # multiprocessing.Pool(multiprocessing.cpu_count()).close()
-        # multiprocessing.Pool(multiprocessing.cpu_count()).join()
+        #multiprocessing.Pool(multiprocessing.cpu_count()).map(self.multi_search, f_urls)
+        #multiprocessing.Pool(multiprocessing.cpu_count()).join()
+        #multiprocessing.Pool(multiprocessing.cpu_count()).close()
         #multiprocessing.cpu_count()
+            self.multi_search(url)
 
 
     def multi_search(self, url):
@@ -54,6 +55,8 @@ class get_info():
             name = self.driver.find_element(
                 By.XPATH, ('//div[@class="x3AX1-LfntMc-header-title-ij8cu"]/div/h1/span'))
             f_name = name.text
+        except NoSuchElementException:
+            self.multi_search(url)
         try:
             category = self.driver.find_element(
                 By.XPATH, ('//button[@jsaction="pane.rating.category"]'))
@@ -101,11 +104,11 @@ class get_info():
             f_time = 'Null'
 
         address = info_attr[0].replace('Address: ', '')
-        find_a_table = False
-        website = None
-        phone = None
-        plus_code = None
-        f_menu = None
+        find_a_table = 'False'
+        website = 'Null'
+        phone = 'Null'
+        plus_code = 'Null'
+        f_menu = 'Null'
         if info_attr[1][:7] == 'Address':
             info_attr.pop(1)
 
@@ -124,14 +127,14 @@ class get_info():
                     By.XPATH, ('//button[@aria-label="Menu"]/div[1]/div[2]/div[3]'))
                 f_menu = menu.text
             elif value == 'Find a table':
-                find_a_table = True
-        self.database.insert_fisrt_info(f_name,f_category,f_reviews,f_rating,f_services,address,f_time,find_a_table,f_menu,website,phone,plus_code)
-        try:
-            self.get_reviews()
+                find_a_table = 'True'
+        self.info_database(f_name,f_category,f_reviews,f_rating,str(f_services),address,str(f_time),find_a_table,f_menu,website,phone,plus_code)
+        """ try:
+            self.get_reviews(f_name)
         except NoSuchElementException:
             print(f"[INFO] Отзывы на {f_name} не обнаружены!")
             print('#'*20)
-        self.driver.back()
+        self.driver.back() """
         try:
             self.get_photo(f_name)
         except NoSuchElementException:
@@ -139,7 +142,7 @@ class get_info():
             print('#'*20)
         self.driver.close()
 
-    def get_reviews(self):
+    def get_reviews(self,f_name):
         self.reviews = {}
         btn_more_reviews = self.driver.find_elements(By.CLASS_NAME, ('M77dve'))
         for click_more_reviews in btn_more_reviews:
@@ -148,11 +151,11 @@ class get_info():
                 break
         sleep(10)
         try:
-            self.circle_reviews()
+            self.circle_reviews(f_name)
         except NoSuchElementException:
             return False
 
-    def circle_reviews(self):
+    def circle_reviews(self, name):
         reviews_cards = self.driver.find_elements(By.CLASS_NAME, ('ODSEW-ShBeI'))
         for review in reviews_cards:  
             author_name = review.find_element(By.CLASS_NAME, ('ODSEW-ShBeI-title'))
@@ -171,14 +174,13 @@ class get_info():
             self.reviews['author_name'] = author_name.text
             self.reviews['rating_from_author'] = rating_from_author
             self.reviews['full_text'] = full_text.text.replace('\n', '')
-            print(f'{self.reviews}\n')
+            reviews = self.reviews.values()
+            self.reviews_database(name, list(reviews))
         sleep(3)
-
 
 
     def get_photo(self, name):
         f_img = []
-        
         sleep(10)
         clicked_img = self.driver.find_elements(
             By.CLASS_NAME, ('mWq4Rd-eEDwDf'))
@@ -195,5 +197,5 @@ class get_info():
         for url_img in img_attr[:10]:
             r_url_img = url_img.replace('background-image: url("', '')
             f_img.append(r_url_img.replace('");', ''))
-        print(f'[INFO] Фотографии из {name} загружены')
-        print('#'*20)
+        for img in f_img:    
+            self.photo_database(name, img)

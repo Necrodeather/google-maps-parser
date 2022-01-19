@@ -1,7 +1,7 @@
 import csv
 from scripts.selemium_search import google_maps
 from selenium.common.exceptions import InvalidSessionIdException
-from database.database import database
+
 
 
 with open('full_list_countrys/city.csv', encoding = 'utf-8') as full_city:
@@ -24,8 +24,6 @@ def url_txt():
 def main():
     print('#'*20)
     url_txt()
-    db = database()
-    db.create_connection()
     print('#'*20)
     country = str(input('country: '))
     search = str(input('search: '))

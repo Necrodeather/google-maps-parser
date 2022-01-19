@@ -1,4 +1,3 @@
-
 import pymysql
 import json
 
@@ -10,15 +9,15 @@ def create_main(cursor):
     CREATE TABLE IF NOT EXISTS main
     (
         id SERIAL NOT NULL AUTO_INCREMENT, 
-        S_Name varchar(30), 
-        Category varchar(30),
-        Reviews varchar(15),
-        Rating varchar(3),
+        S_Name text,
+        Category text,
+        Reviews text,
+        Rating text,
         Services text,
         Address text,
         Work_time text,
-        Find_a_table boolean,
-        Menu text,
+        Find_a_table text,
+        Menu text ,
         Website text,
         Phone text,	
         Plus_code text,
@@ -32,8 +31,7 @@ def create_photo(cursor):
     CREATE TABLE IF NOT EXISTS photo
     (
 	    id SERIAL NOT NULL AUTO_INCREMENT,
-	    Fk_Photo int REFERENCES main(Id),
-	    S_Name varchar(30) REFERENCES main(S_Name),
+	    S_Name text REFERENCES main(S_Name),
 	    Photo text,
 	    primary key(id)
     )"""
@@ -45,12 +43,11 @@ def create_reviews(cursor):
     create_table = """
     CREATE TABLE IF NOT EXISTS reviews
     (
-	    id SERIAL NOT NULL AUTO_INCREMENT,	
-	    fk_Reviews INT REFERENCES main (Id), 	
-	    S_Name varchar(30) REFERENCES main (S_Name),
+	    id SERIAL NOT NULL AUTO_INCREMENT,		
+	    S_Name text REFERENCES main (S_Name),
 	    Avatar_Author text,
-	    Author_name varchar(30),	
-	    Rating varchar(3),	
+	    Author_name text,	
+	    Rating text,	
 	    Full_Text text,
         primary key(id)
     )"""
@@ -58,63 +55,48 @@ def create_reviews(cursor):
     print("[INFO]Таблица 'reviews' Подключена!")
 
 
+def connection_db():
+    try:
+        connection = pymysql.connect(
+            host = config["host"],
+            port = config["port"],
+            user = config["user"],
+            password = config["password"],
+            database = config["database"],
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        print('Connection done!')
+        cursor = connection.cursor()
+        create_main(cursor)
+        create_photo(cursor)
+        create_reviews(cursor)
+    except Exception as ex:
+        print(ex)
+
+    return connection
 
 
+cursor = connection_db()
 
-""" , 
-    photo, avatar_author, author_name, rating_from_author, full_texts):"""
-class database():
-    def create_database(self):
-            print('[INFO] Создаем базу данных')
-            connection = pymysql.connect(
-                host = config["host"],
-                port = config["port"],
-                user = config["user"],
-                password = config["password"],
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            self.cursor = connection.cursor()
-            connection = create_db = f'CREATE DATABASE {config["database"]};'
-            self.cursor.execute(create_db)
-            self.create_connection()
-
-    def create_connection(self):
-        try:
-            connection = pymysql.connect(
-                host = config["host"],
-                port = config["port"],
-                user = config["user"],
-                password = config["password"],
-                database = config["database"],
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            print('Connection done!')
-            self.cursor = connection.cursor()
-            create_main(self.cursor)
-            create_photo(self.cursor)
-            create_reviews(self.cursor)
-        except pymysql.OperationalError:
-            print('[WARNING]База данных не найдена!')
-            self.create_database()
-
-    def insert_fisrt_info(self, name, category, reviews, rating, services, 
+def insert_fisrt_info(name, category, reviews, rating, services, 
     address,work_time, find_a_table, menu, website, phone, plus_code):
-        self.name = name
-        self.category = category
-        self.reviews = reviews
-        self.rating = rating
-        self.services = services
-        self.address = address
-        self.work_time = work_time
-        self.find_a_table = find_a_table
-        self.menu = menu
-        self.website = website
-        self.phone = phone
-        self.plus_code = plus_code
-        
-        sql = self.cursor.execute(f"SELECT S_Name, Category, Rating, Services, Address FROM {config['database']} WHERE S_Name = {self.name},Category = {self.category},Rating = {self.reviews},Services = {self.rating},Address = {self.services}")
-        if sql.fetchone() is None:
-            insert_sql = 'INSERT INTO actress_table VALUES (?,?,?,?,?,?,?,?,?,?,?)', self.name, self.category,self.reviews,self.rating,self.services,self.address,self.work_time,self.find_a_table,self.menu,self.website,self.phone,self.plus_code
-            print(f'Добавлена информация о {self.name}')
-            self.cursor.execute(insert_sql)
-        return()
+    insert_sql = name, category, reviews, rating, services, address, work_time, find_a_table, menu, website, phone, plus_code
+    cursor.cursor().execute('INSERT INTO main (S_Name, Category, Rating, Reviews, Services, Address, Work_time, Find_a_table, Menu, Website, Phone, Plus_code) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', insert_sql) 
+    cursor.commit()
+    print(f'Добавлена информация о {name}')
+    return True
+
+
+def insert_second_reviews(name, review):
+    insert_sql = name, str(review[0]), str(review[1]), str(review[2]), str(review[3])
+    cursor.cursor().execute('INSERT INTO main (S_Name, avatar_author, author_name, rating_from_author, full_texts) VALUES (%s,%s,%s,%s,%s)', insert_sql) 
+    cursor.commit()
+    print(f'Добавлен отзыв о {name}')
+    return True
+
+def insert_three_photo(name, photo):
+    insert_sql = name, photo
+    cursor.cursor().execute('INSERT INTO main (S_Name, avatar_author, author_name, rating_from_author, full_texts) VALUES (%s,%s)', insert_sql) 
+    cursor.commit()
+    print(f'Добавлена фотография о {name}')
+    return True
