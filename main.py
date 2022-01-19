@@ -29,14 +29,14 @@ def main():
     search = str(input('search: '))
     
     for f_country in list_country:
-            if f_country[2] == country:
+            if f_country[2] == country.lower().capitalize():
                 id_country = f_country[0]
                 for f_city in list_city:
                     if f_city[1] == id_country:
                         print('#'*20)
                         print(f_city[3])
                         town = f_city[3]
-                        selenium_search = google_maps("https://www.google.com/maps?hl=en", country, town, search)
+                        selenium_search = google_maps("https://www.google.com/maps?hl=en", country, town, search.lower().capitalize())
                         url_txt()
                         try:
                             selenium_search.output_search()

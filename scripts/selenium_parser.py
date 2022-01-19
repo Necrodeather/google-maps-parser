@@ -6,7 +6,7 @@ from fake_useragent import UserAgent
 import multiprocessing
 from database.database import insert_fisrt_info, insert_second_reviews, insert_three_photo
 from time import sleep
-import random
+import random, config
 
 i = None
 
@@ -29,12 +29,11 @@ class get_info():
             self.urls = urls.read().splitlines()
         f_urls = set(self.urls)
         print('#'*20)
-        for url in f_urls:
-        #multiprocessing.Pool(multiprocessing.cpu_count()).map(self.multi_search, f_urls)
-        #multiprocessing.Pool(multiprocessing.cpu_count()).join()
-        #multiprocessing.Pool(multiprocessing.cpu_count()).close()
+        multiprocessing.Pool(config.proccess).map(self.multi_search, f_urls)
+        multiprocessing.Pool(config.proccess).join()
+        multiprocessing.Pool(config.proccess).close()
         #multiprocessing.cpu_count()
-            self.multi_search(url)
+
 
 
     def multi_search(self, url):
@@ -129,14 +128,17 @@ class get_info():
             elif value == 'Find a table':
                 find_a_table = 'True'
         self.info_database(f_name,f_category,f_reviews,f_rating,str(f_services),address,str(f_time),find_a_table,f_menu,website,phone,plus_code)
-        """ try:
+        try:
             self.get_reviews(f_name)
+            print(f"[INFO] Добавлены отзывы о {f_name}!")
+            print('#'*20)
         except NoSuchElementException:
             print(f"[INFO] Отзывы на {f_name} не обнаружены!")
             print('#'*20)
-        self.driver.back() """
         try:
             self.get_photo(f_name)
+            print(f'[INFO] Добавлены Фотографии о {f_name}!')
+            print('#'*20)
         except NoSuchElementException:
             print(f"[INFO] Фотографии на {f_name} не обнаружены!")
             print('#'*20)
@@ -176,26 +178,28 @@ class get_info():
             self.reviews['full_text'] = full_text.text.replace('\n', '')
             reviews = self.reviews.values()
             self.reviews_database(name, list(reviews))
-        sleep(3)
+        back_btn = self.driver.find_element(By.CLASS_NAME, ('VfPpkd-kBDsod'))
+        back_btn.click()
+        sleep(10)
 
 
     def get_photo(self, name):
         f_img = []
+        
+        clicked_img = self.driver.find_element(
+            By.CLASS_NAME, ('a4izxd-tUdTXb-xJzy8c-haAclf-UDotu'))
+        clicked_img.click()
         sleep(10)
-        clicked_img = self.driver.find_elements(
-            By.CLASS_NAME, ('mWq4Rd-eEDwDf'))
         img = self.driver.find_elements(
-            By.CLASS_NAME, ('mWq4Rd-HiaYvf-MNynB-gevUs'))
-        for click_img in clicked_img:
-            click_img.click()
-            if len(img) == 11:
-                break
-            else:
-                img = self.driver.find_elements(
                     By.CLASS_NAME, ('mWq4Rd-HiaYvf-MNynB-gevUs'))
         img_attr = [x.get_attribute('style') for x in img]
         for url_img in img_attr[:10]:
-            r_url_img = url_img.replace('background-image: url("', '')
-            f_img.append(r_url_img.replace('");', ''))
-        for img in f_img:    
+                r_url_img = url_img.replace('background-image: url("', '')
+                if r_url_img != '//:0");' and img != '");':
+                    f_img.append(r_url_img.replace('");', ''))
+                else:
+                    continue            
+        for img in f_img: 
             self.photo_database(name, img)
+        print(f'Добавлена фотография о {name}')
+        print('#'*20)

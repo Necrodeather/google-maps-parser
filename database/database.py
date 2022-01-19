@@ -1,8 +1,5 @@
 import pymysql
-import json
-
-with open("config.json", "r") as json_config:
-    config = json.load(json_config)
+import config
 
 def create_main(cursor):
     create_table = """
@@ -58,11 +55,11 @@ def create_reviews(cursor):
 def connection_db():
     try:
         connection = pymysql.connect(
-            host = config["host"],
-            port = config["port"],
-            user = config["user"],
-            password = config["password"],
-            database = config["database"],
+            host = config.host,
+            port = config.port,
+            user = config.user,
+            password = config.password,
+            database = config.database,
             cursorclass=pymysql.cursors.DictCursor
         )
         print('Connection done!')
@@ -83,20 +80,18 @@ def insert_fisrt_info(name, category, reviews, rating, services,
     insert_sql = name, category, reviews, rating, services, address, work_time, find_a_table, menu, website, phone, plus_code
     cursor.cursor().execute('INSERT INTO main (S_Name, Category, Rating, Reviews, Services, Address, Work_time, Find_a_table, Menu, Website, Phone, Plus_code) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)', insert_sql) 
     cursor.commit()
-    print(f'Добавлена информация о {name}')
+    print(f'[INFO] Добавлена информация о {name}')
+    print('#'*20)
     return True
-
 
 def insert_second_reviews(name, review):
     insert_sql = name, str(review[0]), str(review[1]), str(review[2]), str(review[3])
-    cursor.cursor().execute('INSERT INTO main (S_Name, avatar_author, author_name, rating_from_author, full_texts) VALUES (%s,%s,%s,%s,%s)', insert_sql) 
+    cursor.cursor().execute('INSERT INTO reviews (S_Name, Avatar_Author, Author_name, Rating, Full_Text) VALUES (%s,%s,%s,%s,%s)', insert_sql) 
     cursor.commit()
-    print(f'Добавлен отзыв о {name}')
     return True
 
 def insert_three_photo(name, photo):
     insert_sql = name, photo
-    cursor.cursor().execute('INSERT INTO main (S_Name, avatar_author, author_name, rating_from_author, full_texts) VALUES (%s,%s)', insert_sql) 
+    cursor.cursor().execute('INSERT INTO photo (S_Name, Photo) VALUES (%s,%s)', insert_sql) 
     cursor.commit()
-    print(f'Добавлена фотография о {name}')
     return True
