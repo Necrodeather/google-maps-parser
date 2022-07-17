@@ -1,3 +1,5 @@
+import asyncio
+
 from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
@@ -10,42 +12,36 @@ class Parser:
         self.urls: list = list(urls)
         self.full_info: dict = {}
 
-    def started_parse(self) -> None:
-        task = [self.get_info(url) for url in self.urls]
+    async def started_parse(self) -> None:
+        task = [await self.get_info(url) for url in self.urls]
+        await asyncio.gather(*task)
 
-    def get_info(self, url: str) -> None:
-        driver: WebDriver = self.__get_driver(url)
+    async def get_info(self, url: str) -> None:
+        driver: WebDriver = await self.__get_driver(url)
         self.full_info['url']: str = url
-        self.full_info['name']: str = self.__find_element(driver, 'h1.DUwDvf')
-        self.full_info['category']: str = self.__find_element(driver, 'button.DkEaL')
-        self.full_info['services']: list = self.__find_element(driver, 'div.E0DTEd').split('\n·\n')
-        self.full_info['rating']: str = self.__find_element(driver, 'div.F7nice')
-        self.full_info['reviews']: str = self.__find_element(driver, 'span.F7nice')
-        self.full_info['work_time'] = self.__search_work_time(driver)
-        self.get_data(driver)
-        driver.close()
+        self.full_info['name']: str | None = await self.__find_element(driver, 'h1.DUwDvf')
+        self.full_info['category']: str | None = await self.__find_element(driver, 'button.DkEaL')
+        self.full_info['services']: list | None = (await self.__get_services(driver)).split('\n·\n')
+        self.full_info['rating']: str | None = await self.__find_element(driver, 'div.F7nice')
+        self.full_info['reviews']: str | None = await self.__find_element(driver, 'span.F7nice')
+        self.full_info['work_time'] = await self.__search_work_time(driver)
+        await self.get_data(driver)
+        await Selenium.close_driver(driver)
         print(self.full_info)
 
-    def get_data(self, driver: WebDriver) -> None:
-        self.__get_data_info(driver, "//button[@class='CsEnBe']")
-        self.__get_data_info(driver, "//a[@class='CsEnBe']")
+    async def get_data(self, driver: WebDriver) -> None:
+        await self.__get_data_info(driver, "//button[@class='CsEnBe']")
+        await self.__get_data_info(driver, "//a[@class='CsEnBe']")
         return None
 
-    def __get_data_info(self, driver: WebDriver, xpath: str) -> None:
+    async def __get_data_info(self, driver: WebDriver, xpath: str) -> None:
         info: list = [x.get_attribute('aria-label') for x in driver.find_elements(By.XPATH, (xpath))]
-        if info[-1] == 'Claim this business':
-            info.pop(-1)
         for value in info:
             try:
                 if value[:5] == 'Phone':
                     self.full_info['phone'] = value[7:]
                 elif value[:9] == 'Plus code':
                     self.full_info['plus_code'] = value[11:]
-                elif value[:4] == 'Menu':
-                    search_menu: list = driver.find_elements(By.CSS_SELECTOR, ('div.gSkmPd'))
-                    for menu in search_menu:
-                        if menu.get_attribute('jstcache') == 156:
-                            self.full_info['menu'] = menu.text
                 elif value == 'Find a table':
                     self.full_info['find_a_table'] = True
                 elif value[:7] == 'Website':
@@ -57,17 +53,20 @@ class Parser:
         return None
 
     @staticmethod
-    def __get_driver(url: str) -> WebDriver:
-        driver: WebDriver = Selenium.opened_info(url)
+    async def __get_driver(url: str) -> WebDriver:
+        driver: WebDriver = await Selenium.opened_info(url)
         return driver
 
     @staticmethod
-    def __find_element(driver: WebDriver, selector: str) -> str:
-        element = driver.find_element(By.CSS_SELECTOR, (selector))
-        return element.text
+    async def __find_element(driver: WebDriver, selector: str) -> str | None:
+        try:
+            element = driver.find_element(By.CSS_SELECTOR, (selector))
+            return element.text
+        except NoSuchElementException:
+            return None
 
     @staticmethod
-    def __search_work_time(driver: WebDriver) -> list | None:
+    async def __search_work_time(driver: WebDriver) -> list | None:
         full_span: list = driver.find_elements(By.TAG_NAME, ('span'))
         for span in full_span:
             if span.get_attribute('aria-label') == "Show open hours for the week":
@@ -77,6 +76,14 @@ class Parser:
                 return work_time
         return None
 
+    async def __get_services(self, driver: WebDriver) -> str | None:
+        try:
+            services: str = await self.__find_element(driver, 'div.E0DTEd')
+            return services
+        except NoSuchElementException:
+            return None
+
+    # TODO: Дальнейший рефакторинг над этим кодом!
     # def get_reviews(self, name):
     #     self.reviews = {}
     #     btn_more_reviews = driver.find_elements(By.CLASS_NAME, ('M77dve'))

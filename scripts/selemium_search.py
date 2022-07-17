@@ -5,30 +5,31 @@ from selenium.common.exceptions import NoSuchElementException, InvalidSessionIdE
     ElementNotInteractableException
 
 from .selenium_start import Selenium
-from .selenium_parser import Parser
 
 
 class GoogleMaps:
     def __init__(self, request: dict):
         self.urls: set = set()
-        self.driver: WebDriver = Selenium.get_start(request)
+        self.request: dict = request
 
-    def get_search(self) -> None:
-        try:
-            self.urls = set([card.get_attribute('href') for card in self.__find_cards()])
-        except (IndexError, NoSuchElementException, InvalidSessionIdException, ElementNotInteractableException):
-            self.get_search()
+    async def get_search(self) -> set:
+        driver: WebDriver = await Selenium.get_start(self.request)
+        while True:
+            try:
+                self.urls = set([card.get_attribute('href') for card in await self.__find_cards(driver)])
+            except (IndexError, NoSuchElementException, InvalidSessionIdException, ElementNotInteractableException):
+                continue
+            try:
+                # endpoint in cards
+                driver.find_element(By.CSS_SELECTOR, ('span.HlvSq'))
+                self.urls = set([card.get_attribute('href') for card in await self.__find_cards(driver)])
+                await Selenium.close_driver(driver)
+                return self.urls
+            except NoSuchElementException:
+                continue
 
-        try:
-            # endpoint in cards
-            self.driver.find_element(By.CLASS_NAME, ('HlvSq'))
-            self.urls = set([card.get_attribute('href') for card in self.__find_cards()])
-            self.driver.close()
-            return Parser(self.urls).started_parse()
-        except NoSuchElementException:
-            self.get_search()
-
-    def __find_cards(self) -> list:
-        cards_search: list = self.driver.find_elements(By.CSS_SELECTOR, ('a.hfpxzc'))
+    @staticmethod
+    async def __find_cards(driver) -> list:
+        cards_search: list = driver.find_elements(By.CSS_SELECTOR, ('a.hfpxzc'))
         cards_search[-1].send_keys(Keys.PAGE_DOWN)
         return cards_search

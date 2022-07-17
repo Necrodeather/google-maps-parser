@@ -2,31 +2,37 @@ from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver import Keys
-from selenium.common.exceptions import NoSuchElementException, InvalidSessionIdException
+from selenium.common.exceptions import NoSuchElementException
 from fake_useragent import UserAgent
 
 
 class Selenium:
     options = Options()
-    # options.headless = True
+    options.headless = True
     useragent = UserAgent()
     options.set_preference("general.useragent.override", useragent.random)
 
     @classmethod
-    def get_start(cls, request: dict) -> WebDriver:
+    async def get_start(cls, request: dict) -> WebDriver:
         driver: WebDriver = WebDriver(options=cls.options)
         driver.get("https://www.google.com/maps?hl=en")
         try:
             search = driver.find_element(By.ID, ('searchboxinput'))
         except NoSuchElementException:
-            cls.__output_search()
+            await cls.__output_search()
+            await cls.get_start(request)
         search.send_keys(f'{request["country"]}, {request["city"]}, {request["search"]}')
         search.send_keys(Keys.ENTER)
         return driver
 
+    @classmethod
+    async def close_driver(cls, driver: WebDriver) -> None:
+        return driver.close()
+
     @staticmethod
-    def __output_search():
-        pass
+    async def __output_search() -> None:
+        return None
+        # TODO: Дальнейшее добавление функционала на прокси
         # i = random.randint(0, int(len(proxy_list))-1)
         # firefox_capabilities = webdriver.DesiredCapabilities.FIREFOX
         # firefox_capabilities["proxy"] = {
@@ -36,11 +42,8 @@ class Selenium:
         # }
 
     @classmethod
-    def opened_info(cls, url: str) -> WebDriver:
-        #try:
+    async def opened_info(cls, url: str) -> WebDriver:
         driver: WebDriver = WebDriver(options=cls.options)
         driver.get(url)
 
         return driver
-        # except InvalidSessionIdException:
-        #     cls.opened_info(url)
