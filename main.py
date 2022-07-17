@@ -1,54 +1,20 @@
-import csv
-from scripts.selemium_search import google_maps
-from selenium.common.exceptions import InvalidSessionIdException
-
-
-
-with open('full_list_countrys/city.csv', encoding = 'utf-8') as full_city:
-    city = csv.reader(full_city, delimiter = ";")
-    list_city = [x for x in city]
-
-
-with open('full_list_countrys/country.csv', encoding = 'utf-8') as full_country:
-    country = csv.reader(full_country, delimiter = ";")
-    list_country = [x for x in country]
-
-
-def url_txt():
-    with open("url.txt", "w+") as t:
-        t.seek(0)
-        t.write('')
-    t.close()
+from scripts import GoogleMaps, Parser
+# from database import create_bd
 
 
 def main():
-    print('#'*20)
-    url_txt()
-    print('#'*20)
-    country = str(input('country: '))
-    search = str(input('search: '))
-    
-    for f_country in list_country:
-            if f_country[2] == country.lower().capitalize():
-                id_country = f_country[0]
-                for f_city in list_city:
-                    if f_city[1] == id_country:
-                        print('#'*20)
-                        print(f_city[3])
-                        town = f_city[3]
-                        selenium_search = google_maps("https://www.google.com/maps?hl=en", country, town, search.lower().capitalize())
-                        url_txt()
-                        try:
-                            selenium_search.output_search()
-                            selenium_search.result_search()
-                        except InvalidSessionIdException:
-                            continue
-                    else:
-                        continue
-            else:
-                continue
-    
-    
+    # create_bd()
+    country = "Russia"  # str(input('country: '))
+    search = "Restaurant"  # str(input('search: '))
+
+    request = {
+        'country': country,
+        'city': "Krasnodar",
+        'search': search.lower().capitalize()
+    }
+    #selenium_search: GoogleMaps = GoogleMaps(request)
+    #selenium_search.get_search()
+    Parser(['https://www.google.com/maps/place/Cafe+%C2%ABPorto+Carras%C2%BB/@45.0222863,38.9678019,17z/data=!4m5!3m4!1s0x40f04fb1249c57bd:0x5ae54babc55d2b8!8m2!3d45.0222863!4d38.9678019?authuser=0&hl=en']).started_parse()
     print('ПОИСК ЗАВЕРШЕН')
 
 

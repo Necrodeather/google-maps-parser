@@ -1,5 +1,5 @@
-env
-chromedriver.exe
+venv
 geckodriver*
-*.txt
 __pycache__
+.env
+.idea
